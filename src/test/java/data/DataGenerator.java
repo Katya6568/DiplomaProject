@@ -11,7 +11,6 @@ import java.util.Random;
 
 import com.github.javafaker.Faker;
 
-import static org.junit.jupiter.params.shadow.com.univocity.parsers.conversions.Conversions.toString;
 
 
 public class DataGenerator {
@@ -19,10 +18,10 @@ public class DataGenerator {
     }
     @Value
     public static class CardInfo {
-        String number;
+        private String number;
     }
 
-    public static CardInfo getArrpovedCardInfo() {
+    public static CardInfo getApprovedCardInfo() {
         return new CardInfo("4444 4444 4444 4441");
     }
 
@@ -30,11 +29,14 @@ public class DataGenerator {
         return new CardInfo("4444 4444 4444 4442");
     }
 
-    private static Faker faker = new Faker(new Locale("en"));
-    private String generateValidMonth() {
-//        String maxMonth = LocalDate.now().getMonthValue().minus(1).toString();
-//        Byte max = Byte.valueOf(maxMonth);
-//        return faker.number().numberBetween();
+    public static Faker faker = new Faker(new Locale("en"));
+
+    public static String generateValidMonth() {
+        int max = (LocalDate.now().getMonthValue());
+        int min = 1;
+        Random random = new Random();
+        int month = faker.number().numberBetween(min, max);
+        return String.format("%02d %n", month); //
     }
 
     public int generateInvalidMonth(int min, int max) {
@@ -48,7 +50,15 @@ public class DataGenerator {
 //месяц у нас будет валидный, получается. Я не понимаю, как установить зависимость
 //данных двух разных полей и генераторов. Можете с этим помочь?
 
-
+    public static int generateValidYear(String pattern) {
+        Date currentDate = new Date();
+        SimpleDateFormat dateFormat = null;
+        dateFormat = new SimpleDateFormat("yy");
+        String minimumYear = dateFormat.format(currentDate);
+        int minYear = Integer.valueOf(minimumYear);
+        int maxYear = minYear + 6;
+        return faker.number().numberBetween(minYear, maxYear);
+    }
 
     public int generateInvalidYearExpired(String pattern) {
         Date currentDate = new Date();
@@ -60,41 +70,53 @@ public class DataGenerator {
         return random.nextInt(maxYear);
     }
 
-    public int generateInvalidYearFuture(String pattern) {
-        Date currentDate = new Date();
-        SimpleDateFormat dateFormat = null;
-        dateFormat = new SimpleDateFormat("yy");
-        String minimumYear = dateFormat.format(currentDate);
-        int minYear = Integer.valueOf(minimumYear);
-        return (int) (Math.random()*(100 - minYear)) + minYear;
-    }
-    public int generateValidYear(String pattern) {
+    public static String generateInvalidYearFuture(String pattern) {
         Date currentDate = new Date();
         SimpleDateFormat dateFormat = null;
         dateFormat = new SimpleDateFormat("yy");
         String year = dateFormat.format(currentDate);
         int currentYear = Integer.valueOf(year);
-        int minYear = currentYear - 5;
-        int maxYear = currentYear;
-        return faker.number().numberBetween(minYear, maxYear);
+        int minYear = currentYear + 7;
+        int maxYear = currentYear + 15;
+        int invalidYear = faker.number().numberBetween(minYear, maxYear);
+        return Integer.toString(invalidYear);
     }
 
-    public String generateValidOwnerName() {
-        return  faker.name().fullName();
+    public static String generateValidOwnerName() {
+        return  faker.name().name();
     }
 
-    public String generateInvalidOneWordOwnerName(){
+    public String generateOneWordInvalidOwnerName() {
         return faker.name().username();
     }
 
-    public String generateCyrillicName() {
+    public String generateCyrillicInvalidOwnerName() {
         Faker faker1 = new Faker(new Locale("ru"));
         return faker.name().fullName();
     }
 
-    public String generateValidCVCCode() {
+    public int generateInvalidNameNumbers() {
+        return faker.number().randomDigitNotZero();
+    }
+
+    public static String generateValidCVCCode() {
         return faker.number().digits(3);
     }
+    public String generateInvalidCVCCode1Digit() {
+        return faker.number().digits(1);
+    }
+    public String generateInvalidCVCCode2Digits() {
+        return faker.number().digits(2);
+    }
+    public String generateInvalidCardNumberShort() {
+        return faker.number().digits(15);
+    }
+    public String generateCardNumberNotInDB() {
+        return faker.business().creditCardNumber();
+    }
+
+
+
 
 
 
