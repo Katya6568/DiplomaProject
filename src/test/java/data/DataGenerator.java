@@ -4,7 +4,7 @@ import lombok.Value;
 
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Random;
@@ -12,13 +12,22 @@ import java.util.Random;
 import com.github.javafaker.Faker;
 
 
-
 public class DataGenerator {
     private DataGenerator() {
     }
+
     @Value
     public static class CardInfo {
         private String number;
+    }
+
+    @Value
+    public static class CardInvalid {
+        private String number;
+        private String month;
+        private String year;
+        private String cardOwner;
+        private String CVC;
     }
 
     public static CardInfo getApprovedCardInfo() {
@@ -31,24 +40,42 @@ public class DataGenerator {
 
     public static Faker faker = new Faker(new Locale("en"));
 
+
+    public static CardInvalid getCardExpired() {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(new Date());
+        calendar.add(Calendar.MONTH, -1);
+        String date = new SimpleDateFormat("dd.MM.yy").format(calendar.getTime());
+        String month = new SimpleDateFormat("MM").format(calendar.getTime());
+        String year = new SimpleDateFormat("yy").format(calendar.getTime());
+        return new CardInvalid("4444 4444 4444 4441", month, year, "Card Holder", "748");
+    }
+
+    public static CardInvalid getCardFuture() {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(new Date());
+        calendar.add(Calendar.YEAR, 10);
+        String date = new SimpleDateFormat("dd.MM.yy").format(calendar.getTime());
+        String month = new SimpleDateFormat("MM").format(calendar.getTime());
+        String year = new SimpleDateFormat("yy").format(calendar.getTime());
+        return new CardInvalid("4444 4444 4444 4441", month, year, "Card Holder", "652");
+    }
+
+    public static String generateInvalidCardNumberShort() {
+        return faker.number().digits(15);
+    }
+
+    public static String generateCardNumberNotInDB() {
+        return faker.business().creditCardNumber();
+    }
+
     public static String generateValidMonth() {
         int max = (LocalDate.now().getMonthValue());
         int min = 1;
         Random random = new Random();
         int month = faker.number().numberBetween(min, max);
-        return String.format("%02d %n", month); //
+        return String.format("%02d %n", month);
     }
-
-    public int generateInvalidMonth(int min, int max) {
-        Random random = new Random();
-        return random.nextInt(100 - 13) + 13;
-    }
-//Запуталась с генерацией данных на (не)валидный месяц. Понятно, что валидные данные
-//будут в диапазоне (0;текущий месяц],а не валидные - (текущий месяц;12].
-//Но всё это верно только при то, что мы имеем ввиду только текущий год.
-//Например, сегодня мы заполняем поля с картой до 11-го месяца 2024 года. Тогда любой
-//месяц у нас будет валидный, получается. Я не понимаю, как установить зависимость
-//данных двух разных полей и генераторов. Можете с этим помочь?
 
     public static int generateValidYear(String pattern) {
         Date currentDate = new Date();
@@ -60,68 +87,35 @@ public class DataGenerator {
         return faker.number().numberBetween(minYear, maxYear);
     }
 
-    public int generateInvalidYearExpired(String pattern) {
-        Date currentDate = new Date();
-        SimpleDateFormat dateFormat = null;
-        dateFormat = new SimpleDateFormat("yy");
-        String maximumYear = dateFormat.format(currentDate);
-        int maxYear = Integer.valueOf(maximumYear);
-        Random random = new Random();
-        return random.nextInt(maxYear);
-    }
-
-    public static String generateInvalidYearFuture(String pattern) {
-        Date currentDate = new Date();
-        SimpleDateFormat dateFormat = null;
-        dateFormat = new SimpleDateFormat("yy");
-        String year = dateFormat.format(currentDate);
-        int currentYear = Integer.valueOf(year);
-        int minYear = currentYear + 7;
-        int maxYear = currentYear + 15;
-        int invalidYear = faker.number().numberBetween(minYear, maxYear);
-        return Integer.toString(invalidYear);
-    }
-
     public static String generateValidOwnerName() {
-        return  faker.name().name();
+        return faker.name().name();
     }
 
-    public String generateOneWordInvalidOwnerName() {
-        return faker.name().username();
+    public static String generateOneWordInvalidOwnerName() {
+        return faker.name().firstName();
     }
 
-    public String generateCyrillicInvalidOwnerName() {
-        Faker faker1 = new Faker(new Locale("ru"));
-        return faker.name().fullName();
+    public static String generateCyrillicInvalidOwnerName() {
+        Faker faker = new Faker(new Locale("ru"));
+        return faker.name().name();
     }
 
-    public int generateInvalidNameNumbers() {
-        return faker.number().randomDigitNotZero();
+    public static String generateInvalidOwnerNameNumbers() {
+        int nameOfNumbers = faker.number().randomDigitNotZero();
+        return Integer.toString(nameOfNumbers);
     }
 
     public static String generateValidCVCCode() {
         return faker.number().digits(3);
     }
-    public String generateInvalidCVCCode1Digit() {
+
+    public static String generate1DigitNumber() {
         return faker.number().digits(1);
     }
-    public String generateInvalidCVCCode2Digits() {
+
+    public static String generate2DigitsNumber() {
         return faker.number().digits(2);
     }
-    public String generateInvalidCardNumberShort() {
-        return faker.number().digits(15);
-    }
-    public String generateCardNumberNotInDB() {
-        return faker.business().creditCardNumber();
-    }
-
-
-
-
-
-
-
-
 
 
 }

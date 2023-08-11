@@ -2,40 +2,34 @@ package pages;
 
 import com.codeborne.selenide.Condition;
 import com.codeborne.selenide.SelenideElement;
-import com.google.protobuf.StringValue;
-import data.DataGenerator;
-import org.openqa.selenium.By;
+import org.openqa.selenium.Keys;
 
 import java.time.Duration;
-import java.util.Random;
 
 import static com.codeborne.selenide.Selectors.*;
 import static com.codeborne.selenide.Selenide.$;
 import static com.codeborne.selenide.Selenide.$$;
+import static org.openqa.selenium.Keys.HOME;
+import static org.openqa.selenium.Keys.SHIFT;
 
 public class PaymentPage {
     private SelenideElement paymentHeading = $(byText("Оплата по карте"));
-    private SelenideElement cardNumber = $$("input.input__control").first();
-    private SelenideElement month = $$("input.input__control").get(1);
-    private SelenideElement year = $$("input.input__control").get(2);
-    private SelenideElement cardOwner = $$("input.input__control").get(3);
-    private SelenideElement CVCCode = $$("input.input__control").get(4);
-    private SelenideElement continueButton = $$("[type= 'button']").find(Condition.exactText("Продолжить"));//find last
+    private SelenideElement cardNumber = $("fieldset > div:nth-of-type(1) .input__control");
+    private SelenideElement month = $$("fieldset > div:nth-of-type(2) .input__control").first();
+    private SelenideElement year = $$("fieldset > div:nth-of-type(2) .input__control").last();
+    private SelenideElement cardOwner = $$("fieldset > div:nth-of-type(3) .input__control").first();
+
+    private SelenideElement CVCCode = $$("fieldset > div:nth-of-type(3) .input__control").last();
+    private SelenideElement continueButton = $$("[type= 'button']").find(Condition.exactText("Продолжить"));
 
     private SelenideElement errorBankNotification= $$(".notification__content").find(Condition.exactText("Ошибка! Банк отказал в проведении операции."));
     private SelenideElement successPayNotification= $$(".notification__content").find(Condition.exactText("Операция одобрена Банком."));
 
-    //private SelenideElement cardError= $$(".input_invalid .input__sub").find();
-   // private SelenideElement monthError= $$(".input_invalid .input__sub").find()
-   // private SelenideElement yearError= $$(".input_invalid .input__sub").find()
-   private SelenideElement ownerError= $(byText("Владелец")).$(By.cssSelector(".input__sub"));
-        //$("input__sub");
-   // private SelenideElement CVCError= $$(".input_invalid .input__sub").find()
-
-
-
-
-
+    private SelenideElement cardErrorSub= $("fieldset > .form-field > .input .input__sub");
+    private SelenideElement monthErrorSub= $("fieldset > div:nth-of-type(2) > span:nth-of-type(1) > span:nth-of-type(1) span:nth-of-type(3)");
+    private SelenideElement yearErrorSub= $("fieldset > div:nth-of-type(2) span:nth-of-type(2) span:nth-of-type(3)");
+    private SelenideElement ownerErrorSub= $("fieldset > div:nth-of-type(3) > span:nth-of-type(1) > span:nth-of-type(1) span:nth-of-type(3)");
+    private SelenideElement cvcErrorSub= $("fieldset > div:nth-of-type(3) span:nth-of-type(2) span:nth-of-type(3)");
 
     public PaymentPage(){
         paymentHeading.shouldBe(Condition.visible);
@@ -48,12 +42,12 @@ public class PaymentPage {
     }
 
     public void successVerify() {
-        successPayNotification.shouldBe(Condition.visible, Duration.ofSeconds(20));
-        errorBankNotification.shouldBe(Condition.hidden, Duration.ofSeconds(20));
+        successPayNotification.shouldBe(Condition.visible, Duration.ofSeconds(30));
+        errorBankNotification.shouldBe(Condition.hidden, Duration.ofSeconds(30));
     }
     public void failureVerify() {
-        errorBankNotification.shouldBe(Condition.visible, Duration.ofSeconds(20));
-        successPayNotification.shouldBe(Condition.hidden, Duration.ofSeconds(20));
+        errorBankNotification.shouldBe(Condition.visible, Duration.ofSeconds(25));
+        successPayNotification.shouldBe(Condition.hidden, Duration.ofSeconds(30));
     }
     public void payment(String cardInfo, String expireMonth, String expireYear, String cardHolder, String CVC) {
         cardNumber.setValue(cardInfo);
@@ -63,6 +57,7 @@ public class PaymentPage {
         CVCCode.setValue(CVC);
         continueButton.click();
     }
+
     public PaymentPage successfulPayment(String cardInfo, String expireMonth, String expireYear, String cardHolder, String CVC){
         payment(cardInfo, expireMonth, expireYear, cardHolder, CVC);
         successVerify();
@@ -73,31 +68,76 @@ public class PaymentPage {
         failureVerify();
         return new PaymentPage();
     }
-    public PaymentPage paymentNoCard(String expireMonth, String expireYear,String cardHolder, String CVC) {
+    public void paymentNoCard(String expireMonth, String expireYear,String cardHolder, String CVC) {
+        cardNumber.sendKeys(Keys.chord(SHIFT, HOME),Keys.BACK_SPACE);
         month.setValue(expireMonth);
         year.setValue(expireYear);
         cardOwner.setValue(cardHolder);
         CVCCode.setValue(CVC);
         continueButton.click();
+    }
+    public void cardNumberError(String errorText) {
+        cardErrorSub.shouldBe(Condition.visible)
+                .shouldHave(Condition.text(errorText));
+        monthErrorSub.shouldBe(Condition.hidden);
+        yearErrorSub.shouldBe(Condition.hidden);
+        ownerErrorSub.shouldBe(Condition.hidden);
+        cvcErrorSub.shouldBe(Condition.hidden);
+    }
+    public PaymentPage paymentCardNumberEmptyField(String expireMonth, String expireYear,String cardHolder, String CVC, String errorText) {
+        paymentNoCard(expireMonth, expireYear, cardHolder, CVC);
+        cardNumberError(errorText);
+    return new PaymentPage();
+    }
+
+    public PaymentPage paymentCardNumberShort(String cardInfo, String expireMonth, String expireYear,String cardHolder, String CVC, String errorText) {
+        payment(cardInfo, expireMonth, expireYear, cardHolder, CVC);
+        cardNumberError(errorText);
         return new PaymentPage();
     }
 
-    public PaymentPage paymentNoMonth(String cardInfo, String expireYear, String cardHolder, String CVC) {
+    public void paymentNoMonth(String cardInfo, String expireYear, String cardHolder, String CVC) {
         cardNumber.setValue(cardInfo);
         year.setValue(expireYear);
         cardOwner.setValue(cardHolder);
         CVCCode.setValue(CVC);
         continueButton.click();
+    }
+    public void monthError(String errorText) {
+        monthErrorSub.shouldBe(Condition.visible)
+                .shouldHave(Condition.text(errorText));
+        cardErrorSub.shouldBe(Condition.hidden);
+        yearErrorSub.shouldBe(Condition.hidden);
+        ownerErrorSub.shouldBe(Condition.hidden);
+        cvcErrorSub.shouldBe(Condition.hidden);
+    }
+    public PaymentPage paymentMonthEmptyField(String cardInfo, String expireYear,String cardHolder, String CVC, String errorText) {
+        paymentNoMonth(cardInfo, expireYear, cardHolder, CVC);
+        monthError(errorText);
         return new PaymentPage();
     }
-    public PaymentPage paymentNoYear(String cardInfo, String expireMonth, String cardHolder, String CVC) {
+    public void paymentNoYear(String cardInfo, String expireMonth, String cardHolder, String CVC) {
         cardNumber.setValue(cardInfo);
         month.setValue(expireMonth);
         cardOwner.setValue(cardHolder);
         CVCCode.setValue(CVC);
         continueButton.click();
+    }
+    public void yearError(String errorText) {
+        yearErrorSub.shouldBe(Condition.visible)
+                .shouldHave(Condition.text(errorText));
+        cardErrorSub.shouldBe(Condition.hidden);
+        monthErrorSub.shouldBe(Condition.hidden);
+        ownerErrorSub.shouldBe(Condition.hidden);
+        cvcErrorSub.shouldBe(Condition.hidden);
+    }
+
+    public PaymentPage paymentYearEmptyField(String cardInfo, String expireMonth, String cardHolder, String CVC, String errorText){
+        paymentNoYear(cardInfo, expireMonth, cardHolder, CVC);
+        yearError(errorText);
         return new PaymentPage();
     }
+
     public PaymentPage paymentNoOwner(String cardInfo, String expireMonth, String expireYear, String CVC) {
         cardNumber.setValue(cardInfo);
         month.setValue(expireMonth);
@@ -106,9 +146,18 @@ public class PaymentPage {
         continueButton.click();
         return new PaymentPage();
     }
-    public void ownerEmptyFieldError() {
-        ownerError.shouldBe(Condition.visible)
-                  .shouldHave(Condition.text("Поле обязательно для заполнения"));
+    public void ownerError(String errorText) {
+        ownerErrorSub.shouldBe(Condition.visible)
+                .shouldHave(Condition.text(errorText));
+        cardErrorSub.shouldBe(Condition.hidden);
+        monthErrorSub.shouldBe(Condition.hidden);
+        yearErrorSub.shouldBe(Condition.hidden);
+        cvcErrorSub.shouldBe(Condition.hidden);
+    }
+    public PaymentPage paymentOwnerEmptyField(String cardInfo, String expireMonth, String expireYear, String CVC, String errorText){
+        paymentNoOwner(cardInfo, expireMonth, expireYear, CVC);
+        ownerError(errorText);
+        return new PaymentPage();
     }
 
     public PaymentPage paymentNoCVC(String cardInfo, String expireMonth, String expireYear, String cardHolder) {
@@ -119,11 +168,50 @@ public class PaymentPage {
         continueButton.click();
         return new PaymentPage();
     }
+    public void cvcError(String errorText) {
+        cvcErrorSub.shouldBe(Condition.visible)
+                .shouldHave(Condition.text(errorText));
+        cardErrorSub.shouldBe(Condition.hidden);
+        monthErrorSub.shouldBe(Condition.hidden);
+        yearErrorSub.shouldBe(Condition.hidden);
+        ownerErrorSub.shouldBe(Condition.hidden);
+    }
+    public PaymentPage paymentCVCEmptyField(String cardInfo, String expireMonth, String expireYear, String cardHolder, String errorText) {
+        paymentNoCVC(cardInfo, expireMonth, expireYear, cardHolder);
+        cvcError(errorText);
+        return new PaymentPage();
+    }
+
+    public PaymentPage paymentCardNumberWrongFormat(String cardInfo, String expireMonth, String expireYear, String cardHolder, String CVC, String errorText) {
+        payment(cardInfo, expireMonth, expireYear, cardHolder, CVC);
+        cardNumberError(errorText);
+        return new PaymentPage();
+    }
 
 
+    public PaymentPage paymentMonthWrongFormat(String cardInfo, String expireMonth, String expireYear, String cardHolder, String CVC, String errorText) {
+        payment(cardInfo, expireMonth, expireYear, cardHolder, CVC);
+        monthError(errorText);
+        return new PaymentPage();
+    }
 
+    public PaymentPage paymentYearWrongFormat(String cardInfo, String expireMonth, String expireYear, String cardHolder, String CVC, String errorText) {
+        payment(cardInfo, expireMonth, expireYear, cardHolder, CVC);
+        yearError("Неверный формат");
+        return new PaymentPage();
+    }
 
+    public PaymentPage paymentOwnerWrongFormat(String cardInfo, String expireMonth, String expireYear, String cardHolder, String CVC, String errorText) {
+        payment(cardInfo, expireMonth, expireYear, cardHolder, CVC);
+        ownerError(errorText);
+        return new PaymentPage();
+    }
 
+    public PaymentPage paymentCVCWrongFormat(String cardInfo, String expireMonth, String expireYear, String cardHolder, String CVC, String errorText) {
+        payment(cardInfo, expireMonth, expireYear, cardHolder, CVC);
+        cvcError(errorText);
+        return new PaymentPage();
+    }
 
 
 }
