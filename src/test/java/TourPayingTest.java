@@ -583,5 +583,3 @@ public class TourPayingTest {
                 "Неверный формат");
     }
 }
-
-
